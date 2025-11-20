@@ -20,24 +20,24 @@ def web_scraper(url : str):
     scraped_text = web_docs[0].page_content
     # This collapses all whitespace (newlines, tabs, multiple spaces) into a single space.
     preprocessed_text = re.sub(r'\s+', ' ', scraped_text).strip()
-    return preprocessed_text
+    chunks = text_splitter(preprocessed_text)
+    return chunks
 
-text_splitter = RecursiveCharacterTextSplitter(
-    # Try to split by paragraph, then line, then sentence, then character
-    separators=["\n\n", "\n", ".", " ", "...", "View More"], 
-    chunk_size=750, 
-    chunk_overlap=100,
-    length_function=len,
-    is_separator_regex=False,
-)
+def text_splitter(text: str):
 
-prompt = PromptTemplate(template="I have scraped a current affairs website, I want to study for UPSC examination, As an expert can you list todays current affairs and categorize them and make a study note of it, this the data i scraped from the website, data --> {text}")
+    text_splitter = RecursiveCharacterTextSplitter(
+        # Try to split by paragraph, then line, then sentence, then character
+        separators=["\n\n", "\n", ".", " ", "...", "View More"], 
+        chunk_size=750, 
+        chunk_overlap=100,
+        length_function=len,
+        is_separator_regex=False,
+    )
+    chunks = text_splitter.create_documents([text])
+    return chunks
 
-
-chunks = text_splitter.create_documents([web_scraper(url= "https://currentaffairs.adda247.com/")])
-
-chain = prompt | model | parser
-
-result = chain.invoke({"text": web_scraper(url= "https://currentaffairs.adda247.com/")})
-
-print(result)
+if __name__ == "__main__":
+    prompt = PromptTemplate(template="I have scraped a current affairs website, I want to study for UPSC examination, As an expert can you list todays current affairs and categorize them and make a study note of it, this the data i scraped from the website, data --> {text}")
+    chain = prompt | model | parser
+    result = chain.invoke({"text": web_scraper(url= "https://currentaffairs.adda247.com/")})
+    print(result)

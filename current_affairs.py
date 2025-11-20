@@ -11,16 +11,16 @@ load_dotenv()
 model = ChatGoogleGenerativeAI(model= "gemini-2.5-flash-lite")
 parser = StrOutputParser()
 
-web_loader = WebBaseLoader("https://currentaffairs.adda247.com/")
 
-web_docs = web_loader.load()
-
-scraped_text = web_docs[0].page_content
-
-# This collapses all whitespace (newlines, tabs, multiple spaces) into a single space.
-preprocessed_text = re.sub(r'\s+', ' ', scraped_text).strip()
-
-# The result is a single, space-delimited string that is easy for splitters to handle.
+# Provide an url to return a single, space-delimited string that is easy for splitters to handle.
+def web_scraper(url : str):
+    
+    web_loader = WebBaseLoader(url)
+    web_docs = web_loader.load()
+    scraped_text = web_docs[0].page_content
+    # This collapses all whitespace (newlines, tabs, multiple spaces) into a single space.
+    preprocessed_text = re.sub(r'\s+', ' ', scraped_text).strip()
+    return preprocessed_text
 
 text_splitter = RecursiveCharacterTextSplitter(
     # Try to split by paragraph, then line, then sentence, then character
@@ -33,10 +33,11 @@ text_splitter = RecursiveCharacterTextSplitter(
 
 prompt = PromptTemplate(template="I have scraped a current affairs website, I want to study for UPSC examination, As an expert can you list todays current affairs and categorize them and make a study note of it, this the data i scraped from the website, data --> {text}")
 
-chunks = text_splitter.create_documents([preprocessed_text])
+
+chunks = text_splitter.create_documents([web_scraper(url= "https://currentaffairs.adda247.com/")])
 
 chain = prompt | model | parser
 
-result = chain.invoke({"text": preprocessed_text})
+result = chain.invoke({"text": web_scraper(url= "https://currentaffairs.adda247.com/")})
 
 print(result)
